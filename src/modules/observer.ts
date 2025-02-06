@@ -21,17 +21,13 @@ function matches(element: Element, selector: string) {
 const observedIframes = new WeakSet<HTMLIFrameElement>()
 
 function observeIFrame(iframe: HTMLIFrameElement) {
-    try {
-        if (iframe.contentDocument) {
-            const iframeObserver = new MutationObserver(observerCallback)
-            iframeObserver.observe(iframe.contentDocument, {
-                attributes: false,
-                childList: true,
-                subtree: true
-            })
-        }
-    } catch (error) {
-        console.error("Error observing iframe:", iframe, error)
+    if (iframe.contentDocument) {
+        const iframeObserver = new MutationObserver(observerCallback)
+        iframeObserver.observe(iframe.contentDocument, {
+            attributes: false,
+            childList: true,
+            subtree: true
+        })
     }
 }
 
