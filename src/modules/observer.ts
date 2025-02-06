@@ -76,22 +76,14 @@ function observerHandleElement(element: Element, isNew: boolean) {
     }
 
     // Safely iterate over the element's children.
-    try {
-        for (const child of element.children) {
-            observerHandleElement(child, isNew)
-        }
-    } catch (error) {
-        console.error("Error iterating element.children for:", element, error)
+    for (const child of element.children) {
+        observerHandleElement(child, isNew)
     }
 
     // If the element has a shadow DOM, process its children and attach an observer.
     if (element.shadowRoot != null) {
-        try {
-            for (const child of element.shadowRoot.children) {
-                observerHandleElement(child, isNew)
-            }
-        } catch (error) {
-            console.error("Error iterating element.shadowRoot.children for:", element, error)
+        for (const child of element.shadowRoot.children) {
+            observerHandleElement(child, isNew)
         }
 
         if (isNew && _observer) {
