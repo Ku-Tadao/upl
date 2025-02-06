@@ -95,11 +95,7 @@ function observerHandleElement(element: Element, isNew: boolean) {
         }
 
         if (isNew && _observer) {
-            try {
-                _observer.observe(element.shadowRoot, { attributes: false, childList: true, subtree: true })
-            } catch (error) {
-                console.error("Error observing shadowRoot for element:", element, error)
-            }
+            _observer.observe(element.shadowRoot, { attributes: false, childList: true, subtree: true })
         }
     }
 }
