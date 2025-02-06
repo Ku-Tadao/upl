@@ -17,32 +17,89 @@ function matches(element: Element, selector: string) {
     return Element.prototype.matches.call(element, selector)
 }
 
+// Track observed iframes to avoid duplicate observers.
+const observedIframes = new WeakSet<HTMLIFrameElement>()
+
+function observeIFrame(iframe: HTMLIFrameElement) {
+    try {
+        if (iframe.contentDocument) {
+            const iframeObserver = new MutationObserver(observerCallback)
+            iframeObserver.observe(iframe.contentDocument, {
+                attributes: false,
+                childList: true,
+                subtree: true
+            })
+        }
+    } catch (error) {
+        console.error("Error observing iframe:", iframe, error)
+    }
+}
+
+
 function observerHandleElement(element: Element, isNew: boolean) {
+    // If the element is a local iframe, attach an observer and exit.
+    if (element instanceof HTMLIFrameElement) {
+        if (!observedIframes.has(element)) {
+            observedIframes.add(element)
+            if (element.contentDocument) {
+                observeIFrame(element)
+            } else {
+                // If not loaded yet, attach a load listener.
+                element.addEventListener("load", () => {
+                    observeIFrame(element)
+                })
+            }
+        }
+        return // Do not process fallback children inside the iframe.
+    }
+
     if (isNew) {
         for (const entry of _entriesCreation) {
-            if (matches(element, entry.selector)) {
-                entry.callback(element)
+            try {
+                if (matches(element, entry.selector)) {
+                    entry.callback(element)
+                }
+            } catch (error) {
+                console.error("Error in creation callback for element:", element, error)
             }
         }
     } else {
         for (const entry of _entriesDeletion) {
-            if (matches(element, entry.selector)) {
-                entry.callback(element)
+            try {
+                if (matches(element, entry.selector)) {
+                    entry.callback(element)
+                }
+            } catch (error) {
+                console.error("Error in deletion callback for element:", element, error)
             }
         }
     }
 
-    for (const child of element.children) {
-        observerHandleElement(child, isNew)
-    }
-
-    if (element.shadowRoot != null) {
-        for (const child of element.shadowRoot.children) {
+    // Safely iterate over the element's children.
+    try {
+        for (const child of element.children) {
             observerHandleElement(child, isNew)
         }
+    } catch (error) {
+        console.error("Error iterating element.children for:", element, error)
+    }
 
-        if (isNew) {
-            _observer!.observe(element.shadowRoot, { attributes: false, childList: true, subtree: true })
+    // If the element has a shadow DOM, process its children and attach an observer.
+    if (element.shadowRoot != null) {
+        try {
+            for (const child of element.shadowRoot.children) {
+                observerHandleElement(child, isNew)
+            }
+        } catch (error) {
+            console.error("Error iterating element.shadowRoot.children for:", element, error)
+        }
+
+        if (isNew && _observer) {
+            try {
+                _observer.observe(element.shadowRoot, { attributes: false, childList: true, subtree: true })
+            } catch (error) {
+                console.error("Error observing shadowRoot for element:", element, error)
+            }
         }
     }
 }
@@ -66,12 +123,29 @@ function observerCallback(mutationsList: MutationRecord[]) {
 function init() {
     _observer = new MutationObserver(observerCallback)
     _observer!.observe(document, { attributes: false, childList: true, subtree: true })
+
+    // Observe any already-present iframes.
+    const iframes = document.querySelectorAll("iframe")
+    iframes.forEach((iframe) => {
+        if (iframe instanceof HTMLIFrameElement) {
+            if (!observedIframes.has(iframe)) {
+                observedIframes.add(iframe)
+                if (iframe.contentDocument) {
+                    observeIFrame(iframe)
+                } else {
+                    iframe.addEventListener("load", () => {
+                        observeIFrame(iframe)
+                    })
+                }
+            }
+        }
+    })
 }
 
 /**
  * Subscribe to element creation.
  * @param selector [CSS Selector]{@link https://www.w3schools.com/jsref/met_document_queryselector.asp}.
- * @param callback Fired when element matching {@link selector} is created.
+ * @param callback Fired when an element matching {@link selector} is created.
  */
 export function subscribeToElementCreation(selector: string, callback: ObserverCallback) {
     _initOnce.trigger()
@@ -79,8 +153,8 @@ export function subscribeToElementCreation(selector: string, callback: ObserverC
 }
 
 /**
- * Exactly same as {@link subscribeToElementCreation} except {@link callback} is called
- * when element is deleted.
+ * Exactly same as {@link subscribeToElementCreation} except the {@link callback} is called
+ * when an element is deleted.
  */
 export function subscribeToElementDeletion(selector: string, callback: ObserverCallback) {
     _initOnce.trigger()
