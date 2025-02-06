@@ -60,7 +60,7 @@ function observerHandleElement(element: Element, isNew: boolean) {
                     entry.callback(element)
                 }
             } catch (error) {
-                console.error("Error in creation callback for element:", element, error)
+                console.error("Error when calling creation callback for element:", element, error)
             }
         }
     } else {
@@ -70,7 +70,7 @@ function observerHandleElement(element: Element, isNew: boolean) {
                     entry.callback(element)
                 }
             } catch (error) {
-                console.error("Error in deletion callback for element:", element, error)
+                console.error("Error when calling deletion callback for element:", element, error)
             }
         }
     }
