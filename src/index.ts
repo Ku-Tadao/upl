@@ -3,8 +3,10 @@ import { initCore } from './core'
 import * as ws from './modules/ws'
 import * as observer from './modules/observer'
 import * as hooks from './modules/hooks'
-// import * as settings from './modules/settings'
-export { ws, observer, hooks, /*settings*/ }
+import * as settings from './modules/settings'
+import * as settingsAPI from './modules/settings/simple-api'
+
+export { ws, observer, hooks, settings, settingsAPI }
 
 /**
  * Init UPL.

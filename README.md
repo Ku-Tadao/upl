@@ -14,8 +14,8 @@ Currently UPL provides the following features:
 - [X] WebSocket hooking.
 - [X] XHR hooking.
 - [X] Fetch hooking.
+- [X] Add simple API to create and manage settings.
 
 ## TODO
 Currently not implemented but is work in progress:
 - [ ] Add support of IFrames to observer.
-- [ ] Add simple API to create and manage settings.
